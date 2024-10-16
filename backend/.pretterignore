@@ -1,0 +1,22 @@
+# Ignore all minified files
+*.min.js
+
+# Ignore build output directory
+dist/
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore specific files
+src/ignored-file.js
+
+# Ignore all JavaScript files in a specific folder
+src/some-folder/*.js
+
+
+# Ignore Envermental File
+*.env
+.env
+.env.*
+
+/.vscode
