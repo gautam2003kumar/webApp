@@ -40,7 +40,34 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 };
 
-export { uploadOnCloudinary };
+const deleteFileFromCloudinary = async (oldFileUrl) => {
+    try {
+        if (!oldFileUrl) {
+            console.error("Old file does not exist:", oldFileUrl);
+            return null;
+        }
+
+        // Extract public ID from Cloudinary URL (assuming URLs are structured as /image/upload/vXXX/{public_id}.{format})
+        const publicId = oldFileUrl.split('/').slice(-1)[0].split('.')[0]; // Extract the public ID part from URL
+
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: "auto" // This auto-detects if it's an image or video
+        });
+
+        console.log(`Cloudinary response: ${response.result}`);
+        return response;
+
+    } catch (error) {
+        console.error("Error while deleting file from Cloudinary:", error);
+        return null;
+    }
+};
+
+
+export { 
+    uploadOnCloudinary,
+    deleteFileFromCloudinary 
+};
 
 
 /*
