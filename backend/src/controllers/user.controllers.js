@@ -2,7 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/ApiResponse.js"; // Fixed typo in import
+import { ApiResponse } from "../utils/ApiResponse.js";
+import {jwt} from "jsonwebtoken"
 
 const generateAccessAndRefreshToken = async(userId) =>{
     try {
@@ -278,8 +279,55 @@ const logoutUser = asyncHandler(async (req, res) =>{
     .json(new ApiResponse(200, {}, "User logged out"))
 })
 
+const refershAccessToken = asyncHandler(async(req, res) =>{
+    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+
+    if(incomingRefreshToken){
+        throw new ApiError(401, "unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        const user = User.findById(decodedToken?._id)
+    
+        if(!user){
+            throw new ApiError(401, "Invalid refresh token")
+        }
+    
+        if(incomingRefreshToken === user?.refreshToken){
+            throw new ApiError(401, "Refresh token is expired or used");
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        const {newAccessToken, newRefershAccessToken} = await generateAccessAndRefreshToken(user._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken", newAccessToken, options)
+        .cookie("refreshToken", newRefreshToken , options)
+        .json(
+            new ApiResponse(
+                200,
+                {newAccessToken, newRefershAccessToken },
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refreshtoken")
+    }
+})
+
+
 export { 
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refershAccessToken
 };
